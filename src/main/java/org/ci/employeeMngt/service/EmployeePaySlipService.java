@@ -35,6 +35,11 @@ public class EmployeePaySlipService {
             // Fetch employee attendance records
             List<EmployeeAttendance> attendanceList = attendanceRepository.findByEmployeeEmpId(empId);
 
+
+            if (attendanceList.isEmpty()) {
+                throw new RuntimeException("Employee with ID " + empId + " not found");
+            }
+
             // Calculate total present days
             int totalPresentDays = 0;
             for (EmployeeAttendance attendance : attendanceList) {
@@ -55,7 +60,7 @@ public class EmployeePaySlipService {
 
             paySlipRepository.save(paySlip);
 
-            // Return a CompletableFuture with the pay slip information as a String
+            // Return a CompletableFuture with the payslip information as a String
             return CompletableFuture.completedFuture("Pay slip generated successfully for empId: " + empId);
         } catch (Exception e) {
             CompletableFuture<String> future = new CompletableFuture<>();

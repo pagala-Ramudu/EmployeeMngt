@@ -38,7 +38,6 @@ public class EmployeePaySlipController {
             // Return success response with the pay slip information
             return new ResponseEntity<>(result, HttpStatus.OK);
         } catch (InterruptedException | ExecutionException e) {
-            // Handle exceptions if needed
             return new ResponseEntity<>("Failed to generate pay slip", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
