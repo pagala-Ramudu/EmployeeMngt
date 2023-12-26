@@ -14,6 +14,7 @@ import javax.transaction.Transactional;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class EmployeePaySlipService {
@@ -27,32 +28,41 @@ public class EmployeePaySlipService {
 
     @Async
     @Transactional
-    public void generatePaySlip(Long empId) {
+    public CompletableFuture<String> generatePaySlip(Long empId) {
+        try {
+            long EMPLOYEE_DAILY_SALARY = 1000;
 
-        long EMPLOYEE_DIALY_SALARY = 1000;
+            // Fetch employee attendance records
+            List<EmployeeAttendance> attendanceList = attendanceRepository.findByEmployeeEmpId(empId);
 
-        // Fetch employee attendance records
-        List<EmployeeAttendance> attendanceList = attendanceRepository.findByEmployeeEmpId(empId);
-
-        // Calculate total present days
-        int totalPresentDays = 0;
-        for (EmployeeAttendance attendance : attendanceList) {
-            if ("Present".equalsIgnoreCase(attendance.getEaStatus())) {
-                totalPresentDays++;
+            // Calculate total present days
+            int totalPresentDays = 0;
+            for (EmployeeAttendance attendance : attendanceList) {
+                if ("Present".equalsIgnoreCase(attendance.getEaStatus())) {
+                    totalPresentDays++;
+                }
             }
+
+            // Calculate total salary
+            double totalSalary = totalPresentDays * EMPLOYEE_DAILY_SALARY;
+
+            // Save the paySlip record
+            EmployeePaySlip paySlip = new EmployeePaySlip();
+            paySlip.setEpDaysPresent(totalPresentDays);
+            paySlip.setEpDailySalary(EMPLOYEE_DAILY_SALARY);
+            paySlip.setEpTotalSalary(totalSalary);
+            paySlip.setCreatedAt(LocalDate.now());
+
+            paySlipRepository.save(paySlip);
+
+            // Return a CompletableFuture with the pay slip information as a String
+            return CompletableFuture.completedFuture("Pay slip generated successfully for empId: " + empId);
+        } catch (Exception e) {
+            CompletableFuture<String> future = new CompletableFuture<>();
+            future.completeExceptionally(e);
+            return future;
         }
-
-        // Calculate total salary
-        double totalSalary = totalPresentDays * EMPLOYEE_DIALY_SALARY;
-
-        // Save the paySlip record
-        EmployeePaySlip paySlip = new EmployeePaySlip();
-        paySlip.setEpDaysPresent(totalPresentDays);
-        paySlip.setEpDailySalary(EMPLOYEE_DIALY_SALARY);
-        paySlip.setEpTotalSalary(totalSalary);
-        paySlip.setCreatedAt(LocalDate.now());
-
-        paySlipRepository.save(paySlip);
     }
+
 }
 
