@@ -24,10 +24,6 @@ public class Employee {
     @Column(name = "EMP_NAME")
     private String empName;
 
-//
-//    @OneToMany( cascade = CascadeType.ALL, orphanRemoval = true)
-//    @JoinColumn(name = "EMP_ID", referencedColumnName = "EMP_ID")
-//    private List<EmployeeAttendance> employeeAttendances = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "employee")
     private List<EmployeeAttendance> employeeAttendances = new ArrayList<>();

@@ -9,6 +9,7 @@ import org.ci.employeeMngt.repository.EmployeeRepository;
 import org.ci.employeeMngt.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
@@ -87,7 +88,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
             // Fetch the employee
             Employee employee = employeeRepository.findById(empId)
-                    .orElseThrow(() -> new RuntimeException("Employee with ID " + empId + " not found"));
+                    .orElseThrow(() -> new RuntimeException(""));
 
             // Save the paySlip record
             EmployeePaySlip paySlip = new EmployeePaySlip();
@@ -125,6 +126,19 @@ public class EmployeeServiceImpl implements EmployeeService {
             return employeeAttendanceRepository.save(employeeAttendance);
         }
         return null;
+    }
+
+    //scheduler to generate payslip
+    @Scheduled(cron = "0 10 16 * * ?")
+    public void generatePaySlips() {
+
+        // Fetch all employee IDs
+        List<Long> employeeIds = employeeAttendanceRepository.findAllEmployeeIds();
+
+        // Generate payslip for each employee
+        for (Long empId : employeeIds) {
+          generatePaySlip(empId);
+        }
     }
 
 }
