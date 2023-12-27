@@ -1,21 +1,16 @@
 package org.ci.employeeMngt.service;
 
 import org.ci.employeeMngt.entity.Employee;
-import org.ci.employeeMngt.repository.EmployeeRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
-@Service
-public class EmployeeService {
-    @Autowired
-    private EmployeeRepository employeeRepository;
+import java.util.concurrent.CompletableFuture;
 
-    public Employee createEmployee(Employee employee) {
-        return employeeRepository.save(employee);
-    }
+public interface EmployeeService {
 
+    public void removeEmployeeAttendance(Long empId, Long attendanceId);
 
+    public Employee createEmployee(Employee employee);
+
+    public Employee getEmployeeById(Long empId);
+
+    public CompletableFuture<String> generatePaySlip(Long empId);
 }
-
-
-

@@ -1,5 +1,6 @@
 package org.ci.employeeMngt.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,7 +16,7 @@ import java.time.LocalDate;
 public class  EmployeeAttendance {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "EA_ID")
+    @Column(name = "EMPLOYEE_ATTANDANCE_ID")
     private Long eaId;
 
     @Column(name = "EA_ATTANDENCE_DATE")
@@ -27,9 +28,9 @@ public class  EmployeeAttendance {
     @Column(name = "EA_MONTH")
     private String eaMonth;
 
-
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JoinColumn(name = "EMP_ID")
+    @JsonIgnore
+    @ManyToOne
+    @JoinColumn(name = "EMP_ID", referencedColumnName = "EMP_ID")
     private Employee employee;
 
 }

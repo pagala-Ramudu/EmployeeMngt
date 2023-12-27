@@ -17,24 +17,24 @@ public class EmployeePaySlip {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name= "EP_ID")
+    @Column(name = "EP_ID")
     private Long epId;
 
-    @Column(name= "EP_PRESENT_DAYS")
+    @Column(name = "EP_PRESENT_DAYS")
     private int epDaysPresent;
 
     @Column(name = "CREATED_DATE")
     private LocalDate CreatedAt;
 
-    @Column(name= "EP_DIALY_SALARY")
+    @Column(name = "EP_DIALY_SALARY")
     private double epDailySalary;
 
-    @Column(name= "EP_TOTAL_SALARY")
+    @Column(name = "EP_TOTAL_SALARY")
     private double epTotalSalary;
 
-//    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-//    @JoinColumn(name = "EMP_ID")
-//    private Employee employee;
+    @OneToOne
+    @JoinColumn(name = "EMP_ID", referencedColumnName = "EMP_ID")
+    private Employee employee;
 
 
 }

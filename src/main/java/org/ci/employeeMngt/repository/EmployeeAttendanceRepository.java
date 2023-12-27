@@ -9,6 +9,6 @@ import java.util.List;
 
 public interface EmployeeAttendanceRepository extends JpaRepository<EmployeeAttendance, Long> {
 
+    List<EmployeeAttendance> findByEmployee_EmpId(Long empId);
 
-    List<EmployeeAttendance> findByEmployeeEmpId(Long empId);
 }
