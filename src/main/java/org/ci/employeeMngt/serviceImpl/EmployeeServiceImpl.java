@@ -13,35 +13,36 @@ import org.ci.employeeMngt.repository.EmployeeAttendanceRepository;
 import org.ci.employeeMngt.repository.EmployeePaySlipRepository;
 import org.ci.employeeMngt.repository.EmployeeRepository;
 import org.ci.employeeMngt.service.EmployeeService;
+import org.ci.employeeMngt.service.PaySlipCalculator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
+
     @Autowired
     private EmployeeRepository employeeRepository;
 
     @Autowired
+    private EmployeePaySlipRepository paySlipRepository;
+
+    @Autowired
+    private PaySlipCalculator dailyPaySlipCalculator;
+
+    @Autowired
+    private PaySlipCalculator monthlyPaySlipCalculator;
+
+    @Autowired
     private EmployeeAttendanceRepository employeeAttendanceRepository;
 
-    @Autowired
-    private EmployeeAttendanceRepository attendanceRepository;
-
-
-    @Autowired
-    private EmployeePaySlipRepository paySlipRepository;
 
     //save employee method
     @Override
@@ -56,6 +57,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     //save employee with attandance
+    @Override
     public Employee saveEmployeeWithAttendances(Employee employee) {
         for (EmployeeAttendance attendance : employee.getEmployeeAttendances()) {
             attendance.setEmployee(employee);
@@ -64,6 +66,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     //add employeeAttendance
+    @Override
     public EmployeeAttendance addEmployeeAttendance(Long empId, EmployeeAttendance employeeAttendance) {
         Employee employee = getEmployeeById(empId);
         if (employee != null) {
@@ -83,78 +86,11 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
     }
 
-    //generate payslip to employee
-    @Override
-    @Async
-    @Transactional
-    public CompletableFuture<String> generatePaySlip(Long empId) {
-        try {
-            long EMPLOYEE_DAILY_SALARY = 1000;
-
-            // Check if a paySlip already exists for the employee
-            if (paySlipRepository.existsByEmployeeEmpId(empId)) {
-                throw new RuntimeException("Pay slip already generated for empId: " + empId);
-            }
-
-            // Fetch employee attendance records
-            List<EmployeeAttendance> attendanceList = attendanceRepository.findByEmployee_EmpId(empId);
-
-            if (attendanceList.isEmpty()) {
-                throw new InspireException(APIErrorCode.RESOURCE_NOT_FOUND);
-            }
-
-            // Calculate total present days
-            int totalPresentDays = 0;
-            for (EmployeeAttendance attendance : attendanceList) {
-                if ("Present".equalsIgnoreCase(attendance.getEaStatus())) {
-                    totalPresentDays++;
-                }
-            }
-
-            // Calculate total salary
-            double totalSalary = totalPresentDays * EMPLOYEE_DAILY_SALARY;
-
-            // Fetch the employee
-            Employee employee = employeeRepository.findById(empId)
-                    .orElseThrow(() -> new RuntimeException(""));
-
-            // Save the paySlip record
-            EmployeePaySlip paySlip = new EmployeePaySlip();
-            paySlip.setEmployee(employee);
-            paySlip.setEpDaysPresent(totalPresentDays);
-            paySlip.setEpDailySalary(EMPLOYEE_DAILY_SALARY);
-            paySlip.setEpTotalSalary(totalSalary);
-            paySlip.setCreatedAt(LocalDate.now());
-            paySlipRepository.save(paySlip);
-
-            // Return a CompletableFuture with the payslip information as a String
-            return CompletableFuture.completedFuture("Pay slip generated successfully for empId: " + empId);
-        } catch (Exception e) {
-            CompletableFuture<String> future = new CompletableFuture<>();
-            future.completeExceptionally(e);
-            return future;
-        }
-    }
-
-    //scheduler to generate payslip
-    @Scheduled(cron = "0 25 16 * * ?")
-    public void generatePaySlips() {
-
-        // Fetch all employee IDs
-        List<Long> employeeIds = employeeAttendanceRepository.findAllEmployeeIds();
-
-        // Generate payslip for each employee
-        for (Long empId : employeeIds) {
-            generatePaySlip(empId);
-
-        }
-    }
-
-
     /**
      * method to generatePaySlipPdf
      */
 
+    @Override
     public ByteArrayInputStream generatePaySlipReport(Long paySlipId) {
         try {
             Optional<EmployeePaySlip> paySlipOptional = paySlipRepository.findById(paySlipId);
@@ -229,10 +165,39 @@ public class EmployeeServiceImpl implements EmployeeService {
         table.addCell(cell);
     }
 
+//    /*
+//     * scheduler to generate payslip
+//     */
+//
+//    @Override
+//    @Scheduled(cron = "0 39 12 * * ?")
+//    public void generatePaySlips() {
+//
+//        // Fetch all employee IDs
+//        List<Long> employeeIds = employeeAttendanceRepository.findAllEmployeeIds();
+//
+//        // Generate payslip for each employee
+//        for (Long empId : employeeIds) {
+//            generatePaySlip(empId);
+//        }
+//    }
+
+    //generatePaySlip monthly or dialy
+    @Override
+    public CompletableFuture<String> generatePaySlip(Long empId, String calculationType) {
+        try {
+            switch (calculationType.toLowerCase()) {
+                case "daily":
+                    return CompletableFuture.completedFuture(dailyPaySlipCalculator.calculatePaySlip(empId));
+                case "monthly":
+                    return CompletableFuture.completedFuture(monthlyPaySlipCalculator.calculatePaySlip(empId));
+                default:
+                    throw new RuntimeException("Invalid calculation type");
+            }
+        } catch (Exception e) {
+            CompletableFuture<String> future = new CompletableFuture<>();
+            future.completeExceptionally(e);
+            return future;
+        }
+    }
 }
-
-
-
-
-
-

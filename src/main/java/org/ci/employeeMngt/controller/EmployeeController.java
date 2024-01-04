@@ -2,8 +2,6 @@ package org.ci.employeeMngt.controller;
 
 import org.ci.employeeMngt.entity.Employee;
 import org.ci.employeeMngt.entity.EmployeeAttendance;
-
-import org.ci.employeeMngt.entity.EmployeePaySlip;
 import org.ci.employeeMngt.exception1.InspireException;
 import org.ci.employeeMngt.repository.EmployeePaySlipRepository;
 import org.ci.employeeMngt.serviceImpl.EmployeeServiceImpl;
@@ -15,10 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -45,7 +40,7 @@ public class EmployeeController {
         return new ResponseEntity<>(savedEmployee, HttpStatus.CREATED);
     }
 
-    //add epmoyeeAttandance
+    //add emloyeeAttandance
     @PostMapping("/{empId}/attendances")
     public ResponseEntity<EmployeeAttendance> addEmployeeAttendance(
             @PathVariable Long empId,
@@ -56,7 +51,7 @@ public class EmployeeController {
                 new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-    //delete employee attandance using empId and attendanceId
+    //delete employee attendance using empId and attendanceId
     @DeleteMapping("/{empId}/attendances/{attendanceId}")
     public ResponseEntity<Void> removeEmployeeAttendance(
             @PathVariable Long empId,
@@ -65,30 +60,9 @@ public class EmployeeController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    //generate employee payslip
-    @PostMapping("/generate")
-    public ResponseEntity<String> generatePaySlip(@RequestParam("empId") Long empId) {
-        try {
-            // Call the asynchronous method and get the CompletableFuture
-            CompletableFuture<String> future = employeeService.generatePaySlip(empId);
-
-            // Block and get the result when the future completes
-            String result = future.get();
-
-            // Check if the future completed exceptionally
-            if (future.isCompletedExceptionally()) {
-                // Handle exception if needed
-                return new ResponseEntity<>("Failed to generate pay slip", HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-
-            // Return success response with the pay slip information
-            return new ResponseEntity<>(result, HttpStatus.OK);
-        } catch (InterruptedException | ExecutionException e) {
-            return new ResponseEntity<>("Failed to generate pay slip", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    //method to generatePaySlipPdf
+    /*
+        method to generatePaySlipPdf
+     */
     @GetMapping(value = "/generate/{paySlipId}", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<InputStreamResource> generatePaySlipPdf(@PathVariable Long paySlipId) {
         try {
@@ -102,11 +76,18 @@ public class EmployeeController {
         } catch (InspireException e) {
             // Handle custom exception here
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Example: Return 404 for RESOURCE_NOT_FOUND
-        } 
-        catch (Exception e) {
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
-
     }
+
+    //generatePaySlip monthly or dialy
+    @GetMapping("/employee/payslip/{empId}")
+    public CompletableFuture<String> generatePaySlip(
+            @PathVariable Long empId,
+            @RequestParam String calculationType) {
+        return employeeService.generatePaySlip(empId, calculationType);
+    }
+
 
 }
